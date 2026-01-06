@@ -41,7 +41,7 @@ else:
     Pc=40880.4 #mmgh
     Tc=536.55 #K
     R=62.36 #mmgh*L/molK
-    M=pm.masa(input("Ingrese el compuesto organico: "),(int(input("Ingrese el numero de decimales a contar para su peso molecular "))))
+    M=pm.masa(st.text("Ingrese el compuesto organico: "),(int(st.number("Ingrese el numero de decimales a contar para su peso molecular "))))
     
     ecua2 = Eq(P_CN * M, den * R * T_CN * (1 + (9 * P_CN * Tc / (128 * Pc * T_CN)) * (1 - 6 * (Tc**2 / T_CN**2))))
     solu2=(solve(ecua2,den))
@@ -59,7 +59,7 @@ else:
     print("=============================================")
     st.header("   DETERMINACION DE CAPACIDADES CALORIFICAS    ")
     print("=============================================")
-    Temperatura=float(input("Ingrese la temperatura presente en el laboratorio para el calculo de la densidad del agua: "))
+    Temperatura=float(st.number("Ingrese la temperatura presente en el laboratorio para el calculo de la densidad del agua: "))
     densidad_del_agua=densidad_agua(Temperatura)
     df2=pd.read_excel(excel, sheet_name=1)
     H1=pd.to_numeric(df2["H1"].astype(str).str.replace("cm","").str.strip()).tolist()
@@ -126,5 +126,6 @@ else:
     },index=["Y","CV","CP"])
     
     st.dataframe(df5)
+
 
 
