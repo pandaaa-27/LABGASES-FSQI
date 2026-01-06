@@ -113,9 +113,9 @@ else:
     CV_teorico=solu4[0]
     CP_teorico=CV_teorico+R
     #ERRORESS
-    E_Y=abs(Y_teorico-Y_promedio)/Y_teorico
-    E_CV=abs(CV_teorico-CV)/CV_teorico
-    E_CP=abs(CP_teorico-CP)/CP_teorico
+    E_Y=abs(Y_teorico-Y_promedio)*100/Y_teorico
+    E_CV=abs(CV_teorico-CV)*100/CV_teorico
+    E_CP=abs(CP_teorico-CP)*100/CP_teorico
     st.header("RESULTADOS")
     
     df5=pd.DataFrame({
@@ -125,6 +125,7 @@ else:
     },index=["Y","CV","CP"])
     
     st.dataframe(df5)
+
 
 
 
