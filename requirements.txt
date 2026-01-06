@@ -2,5 +2,5 @@ pandas
 openpyxl
 streamlit
 sympy
-math
 numpy
+
