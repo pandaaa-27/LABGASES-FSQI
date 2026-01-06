@@ -14,7 +14,7 @@ print("=============================================")
 st.header("             DENSIDAD DE GASES                ")
 print("=============================================")
 excel=st.file_uploader("SUBA EL ARCHIVO CORRECTO :D",type=["xlsx"])
-if archivo_subido is not None:
+if excel is not None:
     df1=pd.read_excel(excel, sheet_name=0) #Tabla 1
     Pb=float(str(df1["Presion"][0]).replace("mmhg","").strip())
     Pvap=float(str(df1["Presion de vapor a temperatura ambiente"][0]).replace("mmhg","").strip())
@@ -127,3 +127,4 @@ if archivo_subido is not None:
 else:
     st.warning("ARCHIVO INCORRECTO, PORFAVOR VUELVA A INTENTARLO")
     st.stop()
+
