@@ -93,7 +93,7 @@ else:
     datos2=lista_y
     df4=pd.DataFrame(datos2,index=["Y1","Y2","Y3","Y4"]).T
     
-    st.dataframe(df4,hide_index=True))
+    st.dataframe(df4,hide_index=True)
     
     #yprom
     Y_promedio=sum(lista_y)/len(lista_y)
@@ -125,6 +125,7 @@ else:
     },index=["Y","CV","CP"])
     
     st.dataframe(df5)
+
 
 
 
