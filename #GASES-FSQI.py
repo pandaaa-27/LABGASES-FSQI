@@ -1,8 +1,5 @@
 #GASES-FSQI
 import streamlit as st
-from tkinter import Tk
-from tkinter.filedialog import askopenfilename
-from tkinter.filedialog import asksaveasfilename
 from Handbook import pesos_moleculares as pm
 from Handbook.densidades import densidad_agua
 import pandas as pd
@@ -124,4 +121,5 @@ df5=pd.DataFrame({
     "Experimental":[Y_promedio,CV,CP],
     "Error":[E_Y,E_CV,E_CP]
 },index=["Y","CV","CP"])
+
 st.dataframe(df5)
