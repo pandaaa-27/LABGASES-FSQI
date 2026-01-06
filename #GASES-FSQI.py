@@ -43,6 +43,7 @@ else:
     R=62.36 #mmgh*L/molK
     compuesto = st.text_input("Ingrese el compuesto orgánico:", placeholder="Ej: C6H12O6")
     decimales = st.number_input("Ingrese el número de decimales:", min_value=0, max_value=10, value=2)
+    M=0
     if compuesto:
         try:
             M = pm.masa(compuesto, int(decimales))
@@ -134,6 +135,7 @@ else:
     },index=["Y","CV","CP"])
     
     st.dataframe(df5)
+
 
 
 
