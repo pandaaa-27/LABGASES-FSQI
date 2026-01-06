@@ -7,7 +7,7 @@ from sympy import symbols, Eq,solve
 from math import*
 st.title("LABORATORIO DE GASES-FSQI")
 st.sidebar.header("Condiciones del laboratorio")
-temp=st.sidebar.number_input("Temperatura del laboratorio(℃):")
+temp=st.sidebar.number_input("Temperatura (℃):")
 pres=st.sidebar.number_input("Presion (mmhg): ")
 
 print("=============================================")
@@ -21,7 +21,7 @@ else:
     Pb=float(str(df1["Presion"][0]).replace("mmhg","").strip())
     Pvap=float(str(df1["Presion de vapor a temperatura ambiente"][0]).replace("mmhg","").strip())
     Temp_pera=float(str(df1["Temperatura en la pera"][0]).replace("K","").strip())
-    masa_g=float(str(df1["Masa de componente organico"][0]).replace("g","").strip())
+    masa_g=float(str(df1["Masa de componente orgánico"][0]).replace("g","").strip())
     vol_des_ml=float(str(df1["Volumen desalojado"][0]).replace("ml","").strip())
     Hum_rel=float(str(df1["%Humedad relativa"][0]).replace("%","").strip())
     
@@ -106,7 +106,7 @@ else:
     CV=solu3[0]
     CP=CV+R
     #TEORICOS
-    Y_teorico=1.369
+    Y_teorico=1.4
     CV_T=symbols("CV_T")
     ecua4=Eq(Y_teorico,(CV_T+R)/CV_T)
     solu4=solve(ecua4,CV_T)
@@ -125,6 +125,7 @@ else:
     },index=["Y","CV","CP"])
     
     st.dataframe(df5)
+
 
 
 
