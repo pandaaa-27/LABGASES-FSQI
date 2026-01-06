@@ -41,8 +41,10 @@ else:
     Pc=40880.4 #mmgh
     Tc=536.55 #K
     R=62.36 #mmgh*L/molK
-    M=pm.masa(st.text_input("Ingrese el compuesto organico: "),(int(st.number_input("Ingrese el numero de decimales a contar para su peso molecular "))))
-    
+    if M:    
+        M=pm.masa(st.text_input("Ingrese el compuesto organico: "),(int(st.number_input("Ingrese el numero de decimales a contar para su peso molecular "))))
+    else:
+        st.info("Ingrese la formula quimica correcta")
     ecua2 = Eq(P_CN * M, den * R * T_CN * (1 + (9 * P_CN * Tc / (128 * Pc * T_CN)) * (1 - 6 * (Tc**2 / T_CN**2))))
     solu2=(solve(ecua2,den))
     den_teorica=solu2[0]
@@ -125,6 +127,7 @@ else:
     },index=["Y","CV","CP"])
     
     st.dataframe(df5)
+
 
 
 
