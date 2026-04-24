@@ -1,142 +1,251 @@
-#GASES-FSQI
 import streamlit as st
-from Handbook import pesos_moleculares as pm
-from Handbook.densidades import densidad_agua
+from Handbook.pesos_moleculares import masa 
 import pandas as pd
-from sympy import symbols, Eq,solve
-from math import*
-st.title("LABORATORIO DE GASES-FSQI")
-st.sidebar.header("Condiciones del laboratorio")
-temp=st.sidebar.number_input("Temperatura (℃):")
-pres=st.sidebar.number_input("Presion (mmhg): ")
+if 'humedad_calculada' not in st.session_state:
+    st.session_state.humedad_calculada = 0.0
+if 'cenizas_calculadas' not in st.session_state:
+    st.session_state.cenizas_calculadas = 0.0
+if 'calcio_calculado' not in st.session_state:
+    st.session_state.calcio_calculado = 0.0
+tab1,tab2,tab3=st.tabs(["CÁLCULOS","FÓRMULAS","RXNS"])
+with tab1:
+    st.title("LABORATORIO GRAVIMETRIA-CENIZAS")
+    #inventario:
+    st.header("DETERMINACION GRAVIMETRICA I")
+    st.subheader("CALCULO DE LA HUMEDAD")
+    with st.expander("DATOS INICIALES"):
+        col1,col2=st.columns(2)
+        with col1:
+            wcrish=st.number_input("Peso del crisol o luna de reloj(g)",value=0.0000,step=0.0001,format="%.4f")
+        with col2:
+            wmCuesh=st.number_input("Peso del crisol+muestra(g)",value=0.0000,step=0.0001,format="%.4f")
+    WMCSECOH=st.number_input("Peso del crisol+muestra seca(g)/Despues de pasar por la estufa",format="%.4f")
+    if wcrish and wmCuesh:
+        if WMCSECOH:
+            wmsech=WMCSECOH-wcrish
+            wmuhumh=wmCuesh-wcrish
+            Humedad=round(abs(wmuhumh-wmsech)*100/wmuhumh,2)
+            st.session_state.humedad_calculada = Humedad
+            df2 = pd.DataFrame({
+                "Descripción": [
+                    "Peso del crisol o luna de reloj(g)", 
+                    "Peso inicial de la muestra(g)", 
+                    "Peso final de la muestra(g)", 
+                    "% Humedad"
+                ],
+                "Resultado": [wcrish, wmuhumh, wmsech, Humedad]
+            })
+            st.table(df2.set_index("Descripción"))
 
-print("=============================================")
-st.header("             DENSIDAD DE GASES                ")
-print("=============================================")
-excel=st.file_uploader("SUBA EL ARCHIVO CORRECTO :D",type=["xlsx"])
-if excel is None:
-    st.info("PORFAVOR SUBA EL ARCHIVO ")
-else:
-    df1=pd.read_excel(excel, sheet_name=0) #Tabla 1
-    Pb=float(str(df1["Presion"][0]).replace("mmhg","").strip())
-    Pvap=float(str(df1["Presion de vapor a temperatura ambiente"][0]).replace("mmhg","").strip())
-    Temp_pera=float(str(df1["Temperatura en la pera"][0]).replace("K","").strip())
-    masa_g=float(str(df1["Masa de componente orgánico"][0]).replace("g","").strip())
-    vol_des_ml=float(str(df1["Volumen desalojado"][0]).replace("ml","").strip())
-    Hum_rel=float(str(df1["%Humedad relativa"][0]).replace("%","").strip())
-    
-    #a)
-    Pb_nuevo=Pb-(100-Hum_rel)*Pvap/100
-    
-    #b)
-    V_CN=symbols("V_CN")
-    P_CN=760 #mmhg
-    T_CN=273.15 #K
-    ecua1=Eq(V_CN*P_CN/T_CN,vol_des_ml*Pb_nuevo/Temp_pera)
-    solu1=(solve(ecua1,V_CN)) #ml
-    v_corr=solu1[0]
-    #c)
-    
-    den=symbols("den")
-    Pc=40880.4 #mmgh
-    Tc=536.55 #K
-    R=62.36 #mmgh*L/molK
-    compuesto = st.text_input("Ingrese el compuesto orgánico:", placeholder="Ej: C6H12O6")
-    decimales = st.number_input("Ingrese el número de decimales:", min_value=0, max_value=10, value=2)
-    if compuesto:
-        try:
-            M = pm.masa(compuesto, int(decimales))
-            st.success(f"El peso molecular calculado es: **{M}**")
-            
-        except Exception as e:
-            st.error(f"Error en la fórmula química. Revise el compuesto ingresado. (Detalle: {e})")
-        
-        ecua2 = Eq(P_CN * M, den * R * T_CN * (1 + (9 * P_CN * Tc / (128 * Pc * T_CN)) * (1 - 6 * (Tc**2 / T_CN**2))))
-        solu2=(solve(ecua2,den))
-        den_teorica=solu2[0]
-        #d)
-        den_ex=masa_g/(v_corr*10**-3)
-        #%Error exp
-        Error_exp=abs(den_ex-den_teorica)/den_teorica*100
-        st.write(f"a) Presion barometrica corregida: {Pb_nuevo} mmhg")
-        st.write(f"b) Volumen de aire desplazado corregido(CN): {v_corr} ml")
-        st.write(f"c) Densidad teorica (CN): {den_teorica} g/L")
-        st.write(f"d) Densidad experimental: {den_ex} g/L")
-        st.write(f"e) Error experimental: {Error_exp} %")
-        #RELACION DE CAPACIDADES CALORIFICAS
-        print("=============================================")
-        st.header("   DETERMINACION DE CAPACIDADES CALORIFICAS    ")
-        print("=============================================")
-        densidad_del_agua=densidad_agua(temp)
-        df2=pd.read_excel(excel, sheet_name=1)
-        H1=pd.to_numeric(df2["H1"].astype(str).str.replace("cm","").str.strip()).tolist()
-        H2=pd.to_numeric(df2["H2"].astype(str).str.replace("cm","").str.strip()).tolist()
-        def p_total(altura):
-            P_agua=float(densidad_del_agua)*1000*(9.81/100)*(760/(101.3*10**3))*float(altura)
-            Ptotal=Pb+P_agua
-            return Ptotal
-        
-        #considerando que el primer par es 10 cm
-        lista_presionesP1=[]
-        for i in H1:
-            P=p_total(i)
-            lista_presionesP1.append(P)
-        lista_presionesP2=[]
-        for i in H2:
-            P=p_total(i)
-            lista_presionesP2.append(P)
-        datos={
-            "P1(mmhg)/corresponde a H1":lista_presionesP1,
-            "P2(mmhg)/corresponde a H2":lista_presionesP2
-        }
-        df3=pd.DataFrame(datos, index=["Desnivel: 10 cm","Desnivel: 15cm","Desnivel: 20 cm","Desnivel: 25cm"])
-        
-        st.dataframe(df3)
-        #PARA HALLAR EL Y
-        print("CAPACIDADES  CALORIFICAS")
-        lista_y=[]
-        for i,j in zip(lista_presionesP1,lista_presionesP2):
-            y=(log(i)-log(Pb))/(log(i)-log(j))
-            lista_y.append(y)
-        datos2=lista_y
-        df4=pd.DataFrame(datos2,index=["Y1","Y2","Y3","Y4"]).T
-        
-        st.dataframe(df4,hide_index=True)
-        
-        #yprom
-        Y_promedio=sum(lista_y)/len(lista_y)
-        R=8.314 #J/mol*K
-        CV=symbols("CV")
-        #Y=CP/CV
-        ecua3=Eq(Y_promedio,(CV+R)/CV)
-        solu3=solve(ecua3,CV)
-        #EXPERIMENTALES
-        CV=solu3[0]
-        CP=CV+R
-        #TEORICOS
-        Y_teorico=1.4
-        CV_T=symbols("CV_T")
-        ecua4=Eq(Y_teorico,(CV_T+R)/CV_T)
-        solu4=solve(ecua4,CV_T)
-        CV_teorico=solu4[0]
-        CP_teorico=CV_teorico+R
-        #ERRORESS
-        E_Y=abs(Y_teorico-Y_promedio)*100/Y_teorico
-        E_CV=abs(CV_teorico-CV)*100/CV_teorico
-        E_CP=abs(CP_teorico-CP)*100/CP_teorico
-        st.header("RESULTADOS")
-        
-        df5=pd.DataFrame({
-            "Teorico":[Y_teorico,CV_teorico,CP_teorico],
-            "Experimental":[Y_promedio,CV,CP],
-            "Error":[E_Y,E_CV,E_CP]
-        },index=["Y","CV","CP"])
-        
-        st.dataframe(df5)
-    else:
-        st.info("Ingrese la formula quimica correcta")
-    
-    
+    st.subheader("CALCULO DE CENIZAS")
+    with st.expander("DATOS INICIALES"):
+        col1,col2=st.columns(2)
+        with col1:
+            wcris=st.number_input("Peso del crisol(g)",value=0.0000,step=0.0001,format="%.4f")
+        with col2:
+            wmCues=st.number_input("Peso del crisol+muestra(g)",value=0.0000,step=0.0001,format="%.4f",key="ceniza")
+
+    WMCSECO=st.number_input("Peso del crisol+muestra seca(g)",format="%.4f")
+    if wcris and wmCues:
+        if WMCSECO:
+            st.subheader("RESULTADOS")
+            Wmuestra=wmCues-wcris
+            Wceniza=WMCSECO-wcris
+            porcen_Ceniza=round(abs(Wceniza)*100/Wmuestra,4)
+            st.session_state.cenizas_calculadas = porcen_Ceniza
+            porcen_organico=round(100-porcen_Ceniza,4)
+            df1 = pd.DataFrame({
+                "Descripción": [
+                    "Peso del crisol(g)", 
+                    "Peso inicial de la muestra(g)", 
+                    "Peso final de la muestra(g)", 
+                    "% Cenizas", 
+                    "% Comp. Organico"
+                ],
+                "Resultado": [
+                    wcris, 
+                    Wmuestra, 
+                    Wceniza, 
+                    porcen_Ceniza, 
+                    porcen_organico
+                ]
+            })
+            st.table(df1.set_index("Descripción"))
+            if Wceniza:
+                st.header("DETERMINACION GRAVIMETRICA II")
+                st.info("Haciendo uso del residuo mineral del crisol luego de determinar las cenizas")
+                #SI 500 ℃-> CaCO3
+                #SI 1000℃-> CaO
+                colcris,colfinal=st.columns(2)
+                with colcris:
+                    cris=st.number_input("Peso del crisol",min_value=0.0000,max_value=10000.0000,format="%.4f")
+                with colfinal:
+                    crisfinal=st.number_input("Peso final(crisol+residuo)",min_value=0.0000,max_value=10000.0000,format="%.4f")
+                residuo=crisfinal-cris
+                st.write("FACTOR GRAVIMETRICO ")
+                compuesto = st.segmented_control(
+                    "Compuesto de referencia:",
+                    options=["CaCO3", "CaO"],
+                    default="CaCO3"
+                )
+                if compuesto=="CaCO3":
+                    FG=masa("Ca",4)/masa("CaCO3",4)
+                else:
+                    FG=masa("Ca",4)/masa("CaO",4)
+
+                Ca=(residuo*FG)*100/Wmuestra
+                st.session_state.calcio_calculado = Ca
+                df3=pd.DataFrame({
+                    "Descripción":[
+                    "Peso inicial de la muestra(g)",
+                    "Peso residuo (g)",
+                    "Factor gravimetrico",
+                    "% Calcio"
+                    ],
+                    "Resultados":[Wmuestra,Wceniza,FG,Ca]
+                })
+                st.table(df3.set_index("Descripción"))
+                with st.expander("DETALLES"):
+                    col1,col2=st.columns(2)
+                    with col1:
+                        st.metric(label="M molar Ca",value=f"{masa('Ca',4)} g/mol")
+                    with col2:
+                        if compuesto=="CaCO3":
+                            st.metric(label="M molar de la cenizas",value=f"{masa('CaCO3',4)} g/mol")
+                        else:
+                            st.metric(label="M molar de las cenizas",value=f"{masa('CaO',4)} g/mol")
+
+                st.header("RESUMEN DE LOS ANALISIS")
+
+                opciones_leche = [
+                    "Leche entera en polvo",
+                    "Leche parcialmente descremada en polvo",
+                    "Leche descremada en polvo",
+                    "Leche entera en polvo instantánea",
+                    "Leche parcialmente descremada en polvo instantánea",
+                    "Leche descremada en polvo instantánea"
+                ]
+                seleccion = st.selectbox(
+                    "Seleccione el tipo de producto :",
+                    options=opciones_leche,
+                    index=None,
+                    placeholder="Elija el tipo de muestra analizada"
+                )
+                c,h,ca=0.0,0.0,0.0
+                if seleccion=="Leche entera en polvo":
+                    c=7.0
+                    h=100
+                    ca=1
+                elif seleccion=="Leche parcialmente descremada en polvo":
+                    c=8
+                    h=100
+                    ca=1
+                elif seleccion=="Leche descremada en polvo":
+                    c=9
+                    h=100
+                    ca=1
+                elif seleccion=="Leche entera en polvo instantánea":
+                    c=7
+                    h=60
+                    ca=1
+                elif seleccion=="Leche parcialmente descremada en polvo instantánea":
+                    c=8
+                    h=60
+                    ca=1
+                else:
+                    c=9
+                    h=60
+                    ca=1
+                if st.session_state.humedad_calculada > 0:
+                    df4=pd.DataFrame({
+                        "%Cenizas":[st.session_state.cenizas_calculadas],
+                        "%Humedad":[st.session_state.humedad_calculada],
+                        "%Calcio":[st.session_state.calcio_calculado]
+                    })
+                    def pintar(fila, lim_c, lim_h,lim_ca):
+                        estilos = [''] * len(fila)
+                        
+                        for i, col in enumerate(fila.index):
+
+                                if col == "%Cenizas": lim = lim_c
+                                elif col == "%Humedad": lim = lim_h
+                                elif col == "%Calcio": lim = lim_ca
+                                else: continue
+                                if fila[col] > lim:
+                                    estilos[i] = 'background-color: #EE7171; color: black; font-weight: bold;' 
+                                else:
+                                    estilos[i] = 'background-color: #5383C2; color: black; font-weight: bold;' 
+                        return estilos
+                    st.dataframe(df4.style.apply(pintar, lim_c=c, lim_h=h,lim_ca=ca, axis=1))
+                    st.divider()
+                    col_ley1, col_ley2, _ = st.columns([1, 1, 2])
+
+                    with col_ley1:
+                        st.markdown("🟦 **Aceptable**")
+                        st.caption("Dentro de los límites")
+
+                    with col_ley2:
+                        st.markdown("🟥 **No aceptable**")
+                        st.caption("Fuera de norma")
+                    st.info("PARA EL ANALISIS DE RESULTADOS, LOS VALORES LIMITES SE BASARON EN EL NTP202.005")
+                else:
+                    df4=pd.DataFrame({
+                        "%Cenizas":[st.session_state.cenizas_calculadas],
+                        "%Calcio":[st.session_state.calcio_calculado]
+                    })
+                    def pintar(fila, lim_c,lim_ca):
+                        estilos = [''] * len(fila)
+                        
+                        for i, col in enumerate(fila.index):
+
+                                if col == "%Cenizas": lim = lim_c
+                                elif col == "%Calcio": lim = lim_ca
+                                else: continue
+                                if fila[col] > lim:
+                                    estilos[i] = 'background-color: #EE7171; color: black; font-weight: bold;' 
+                                else:
+                                    estilos[i] = 'background-color: #5383C2; color: black; font-weight: bold;' 
+                        return estilos
+                    st.dataframe(df4.style.apply(pintar, lim_c=c,lim_ca=ca, axis=1))
+                    st.divider()
+                    col_ley1, col_ley2, _ = st.columns([1, 1, 2])
+
+                    with col_ley1:
+                        st.markdown("🟦 **Aceptable**")
+                        st.caption("Dentro de los límites")
+
+                    with col_ley2:
+                        st.markdown("🟥 **No aceptable**")
+                        st.caption("Fuera de norma")
+                    st.info("PARA EL ANALISIS DE RESULTADOS, LOS VALORES LIMITES SE BASARON EN EL NTP202.005")
+with tab2:
+    st.header("DETERMINACION DE LA HUMEDAD")
+    st.latex(r"\%Humedad=\frac{W_{muestra\ inicial}-W_{muestra\ seca}}{W_{muestra\ inicial}} \times 100")
+    st.header("DETERMINACION DE CENIZAS")
+    st.text("Analito=cenizas totales")
+    st.text("Las cenizas representan los residuos minerales inorganicos")
+    st.latex(r"\%Cenizas=\frac{W_{cenizas}}{W_{muestra\ inicial}} \times 100")
+    st.header("DETERMINACION DE CALCIO")
+    st.subheader("Factor gravimetrico")
+    st.latex(r"FG=\frac{Masa\ molar\ del\ analito\ deseado(Ca)}{Masa\ molar\ del\ compuesto\ pesado(CaCO3\ o\ CaO)}")
+    st.text("Si 500 ℃-> CaCO3")
+    st.text("Si 1000℃-> CaO")
+    st.latex(r"\%Calcio=\frac{W_{precipitado} \times FG}{W_{muestra\ original}} \times 100")
+    st.text("VALORES LIMITE PARA EL ANALISIS DE RESULTADOS:") 
+with tab3:  
+    st.header("Reacciones quimicas")
+    st.subheader("I) ATAQUE ÁCIDO")
+    st.latex(r"CaO_{(s)} + 2HCl_{(ac)} \rightarrow CaCl_{2(ac)} + H_{2}O_{(l)}")
+    st.latex(r"CaCO_{3(s)} + 2HCl_{(ac)} \rightarrow CaCl_{2(ac)} + CO_{2(g)} \uparrow + H_{2}O_{(l)}")
+    st.subheader("II) FORMACION DE OXALATO")
+    st.latex(r"(NH_{4})_{2}C_{2}O_{4(ac)} \rightleftharpoons 2NH_{4(ac)}^{+} + C_{2}O_{4(ac)}^{2-}")
+    st.latex(r"Ca_{(ac)}^{2+} + C_{2}O_{4(ac)}^{2-} + H_{2}O_{(l)} \xrightarrow{pH \approx 4} CaC_{2}O_{4} \cdot H_{2}O_{(s)} \downarrow")
+    st.subheader("III)CALCINACION")
+    st.info("A 500°C se obtiene Carbonato de Calcio (Forma de pesada en tu informe):")
+    st.latex(r"CaC_{2}O_{4} \cdot H_{2}O_{(s)} \xrightarrow{500^{\circ}C} CaCO_{3(s)} + CO_{(g)} \uparrow + H_{2}O_{(g)} \uparrow")
+
+    st.info("A temperaturas superiores (>800°C) se obtendría Óxido de Calcio:")
+    st.latex(r"CaCO_{3(s)} \xrightarrow{>800^{\circ}C} CaO_{(s)} + CO_{2(g)} \uparrow") 
     
     
     
